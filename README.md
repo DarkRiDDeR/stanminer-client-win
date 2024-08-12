@@ -4,7 +4,7 @@ Windows client for StanMiner (https://stanvps.ddns.net/)
 
 run the script as administrator `start.bat` 
 
-execute the command:
+or execute the command:
 
 ``python stanminer_client_win.py -u UQCFVXtlCUjTY5n1zdwXbALgsbYQK1WrZUfAzU3shSyMx5D8 -t 3``
 
