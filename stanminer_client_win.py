@@ -188,6 +188,7 @@ def start_mining(miner, args):
         
 
 def receive_commands(server_host, server_port, user_wallet, user_threads):
+    prev_command = ""
     while True:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
             print(f"Connecting to server at {server_host}:{server_port}...")
@@ -227,22 +228,24 @@ def receive_commands(server_host, server_port, user_wallet, user_threads):
                     print(f"STAN-START is starting...\n------{command}\n") # {command}
                     print("STAN-START is active.\n------\n")
 
-                    # parse command and start mining
-                    if "sudo /tmp/STAN_MINER/cpuminer-opt" in command:
-                        stop_mining()
-                        start_mining("cpuminer-opt-rplant", re.sub(r'^.*/cpuminer-sse2 (.*?)2>&1.*$', r'\1', command, flags=re.S))
-                    elif "sudo /tmp/STAN_MINER/SRBMiner-Multi" in command:
-                        stop_mining()
-                        start_mining("srbminer-multi", re.sub(r'^.*/SRBMiner-MULTI (.*?)--log-file.*$', r'\1', command, flags=re.S))
-                    elif "sudo /tmp/STAN_MINER/xmrig" in command:
-                        stop_mining()
-                        start_mining("xmrig", re.sub(r'^.*/xmrig (.*?)2>&1.*$', r'\1', command, flags=re.S))
-                    elif "sudo /tmp/STAN_MINER/" in command: # most likely some unknown miner
-                        stop_mining()
-                        print("Most likely some unknown miner for the client. Mining stopped\n------\n" + command)
-                    else:
-                        print("When parsing commands from the server, the miner was not found\n")
-                        print("Server command:\n------\n" + command)
+                    if prev_command != command:
+                        prev_command = command
+                        # parse command and start mining
+                        if "sudo /tmp/STAN_MINER/cpuminer-opt" in command:
+                            stop_mining()
+                            start_mining("cpuminer-opt-rplant", re.sub(r'^.*/cpuminer-sse2 (.*?)2>&1.*$', r'\1', command, flags=re.S))
+                        elif "sudo /tmp/STAN_MINER/SRBMiner-Multi" in command:
+                            stop_mining()
+                            start_mining("srbminer-multi", re.sub(r'^.*/SRBMiner-MULTI (.*?)--log-file.*$', r'\1', command, flags=re.S))
+                        elif "sudo /tmp/STAN_MINER/xmrig" in command:
+                            stop_mining()
+                            start_mining("xmrig", re.sub(r'^.*/xmrig (.*?)2>&1.*$', r'\1', command, flags=re.S))
+                        elif "sudo /tmp/STAN_MINER/" in command: # most likely some unknown miner
+                            stop_mining()
+                            print("Most likely some unknown miner for the client. Mining stopped\n------\n" + command)
+                        else:
+                            print("When parsing commands from the server, the miner was not found\n")
+                            print("Server command:\n------\n" + command)
 
 
                     while True:
