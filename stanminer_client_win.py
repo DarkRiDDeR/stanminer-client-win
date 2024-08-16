@@ -67,6 +67,18 @@ def format_list_temp_line(line):
 def get_cpu_temperature():
     try:
         temps = []
+        d = requests.get('http://' + _g_config['MAIN']['libre_hardware_monitor'] + '/data.json')
+        d = d.json()
+        re_pattern_temper = r'^.*?([\d]+).*$'
+        for device in d['Children'][0]['Children']:
+            if re.search(r'^(Intel|AMD)\s', device['Text'], flags=re.IGNORECASE):
+                for group in device['Children']:
+                    if group['Text'] == 'Temperatures':
+                        for temper in group['Children']:
+                            if temper['Text'] == 'CPU Package':
+                                t = re.sub(re_pattern_temper, r'\1', temper['Value'])
+                                t = int(t) if t.isdigit() else None
+                                temps.append({'cpu': t,'temps': []})
         return temps
 
     except Exception as e:
@@ -97,6 +109,8 @@ def configIni():
             _g_config.set('MAIN', "; worker", "hash of hostname + MAC")
             _g_config.set('MAIN', 'worker', gen_hash_sha1_to_base64(hostname + mac).replace('+', '').replace('/', '')[0:10])
             _g_config.set('MAIN', 'hide_mining_window', 'false')
+            _g_config.set('MAIN', 'detect_temperature', 'false')
+            _g_config.set('MAIN', 'libre_hardware_monitor', '127.0.0.1:8085')
             with open('config.ini', 'w') as configfile:
                 _g_config.write(configfile)
         else:
@@ -251,7 +265,9 @@ def receive_commands(server_host, server_port, user_wallet, user_threads):
                     while True:
                         try:
                             # Дополнительно можно отправлять информацию о состоянии системы
-                            temps = get_cpu_temperature()
+                            temps = []
+                            if (_g_config.getboolean('MAIN', 'detect_temperature')):
+                                temps = get_cpu_temperature()
                             last_10_lines = [] #read_last_10_lines(log_file_path)
                             cpu_load = None #load = get_cpu_load()
                             message = json.dumps({
@@ -284,7 +300,8 @@ def receive_commands(server_host, server_port, user_wallet, user_threads):
                 client_socket.close()
                 
 
-if __name__ == "__main__":   
+if __name__ == "__main__":  
+    stop_mining() 
     configIni()
     start_load_miners()
     parser = argparse.ArgumentParser()

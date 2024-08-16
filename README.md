@@ -19,6 +19,8 @@ After the first run of the script, an additional file ``config.ini`` with settin
 [MAIN]
 worker = win-worker-test
 hide_mining_window = false
+detect_temperature = false
+libre_hardware_monitor = 127.0.0.1:8085
 ```
 
 # Install
@@ -43,6 +45,31 @@ Download and install python using the following command
 You can check the version to verify if Python was successfully installed as follows
 
 ``python --version``
+
+## Optionally. Install [Libre-hardware-monitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) for monitoring CPU temperature
+
+Install with powershell:
+
+``choco install libre-hardware-monitor``
+
+Run program **Libre-hardware-monitor then** (fork of Open Hardware Monitor with updates) and select:
+
+- Options - Run On Windows Startup
+- Options - Remote Web Server - Run
+- Options - Remote Web Server - Port = 8085
+- File - Hardware - Only select CPU
+
+You can check it in your browser using your local IP:
+
+http://127.0.0.0:8085/
+
+
+Then set config.ini flags:
+
+```
+detect_temperature = true
+libre_hardware_monitor = 127.0.0.1:8085
+````
 
 # License
 
