@@ -52,7 +52,7 @@ Install with powershell:
 
 ``choco install libre-hardware-monitor``
 
-Run program **Libre-hardware-monitor then** (fork of Open Hardware Monitor with updates) and select:
+Run program **Libre-hardware-monitor** (fork of Open Hardware Monitor with updates) and select:
 
 - Options - Run On Windows Startup
 - Options - Remote Web Server - Run
@@ -61,7 +61,7 @@ Run program **Libre-hardware-monitor then** (fork of Open Hardware Monitor with 
 
 You can check it in your browser using your local IP:
 
-http://127.0.0.0:8085/
+http://127.0.0.1:8085/
 
 
 Then set config.ini flags:
