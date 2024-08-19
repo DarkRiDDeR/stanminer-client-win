@@ -17,11 +17,18 @@ After the first run of the script, an additional file ``config.ini`` with settin
 
 ```
 [MAIN]
+server = stanvps.ddns.net
+port = 8084
 worker = win-worker-test
 hide_mining_window = false
 detect_temperature = false
 libre_hardware_monitor = 127.0.0.1:8085
 ```
+
+**Ports:**
+
+- 8084 - standart server
+- 8184 - dev server
 
 # Install
 

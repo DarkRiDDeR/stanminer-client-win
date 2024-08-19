@@ -35,6 +35,13 @@ _g_miners = {
         'subfolder': 'xmrig-6.21.3',
         'exe': 'xmrig'
     },
+    'spectre': {
+        'version': '0.6.20',
+        'url': ' https://github.com/BinaryExpr/spectre-miner/releases/download/v0.6.20/spectre_miner_x64-v0.6.20_windows.zip',
+        'subfolder': '',
+        'exe': 'spectre-miner'
+       
+    }
 }
 
     
@@ -103,9 +110,11 @@ def configIni():
         _g_config = configparser.ConfigParser()
         if not os.path.exists("config.ini"):
             _g_config.add_section('MAIN')
+            _g_config.set('MAIN', 'server', 'stanvps.ddns.net')
+            _g_config.set('MAIN', 'port', '8084')
+            # generate hash of hostname + MAC
             hostname = powershell("hostname", True)
             mac = powershell("Get-NetAdapter | Select-Object -expandproperty MacAddress", True)
-            # generate hash of hostname + MAC
             _g_config.set('MAIN', "; worker", "hash of hostname + MAC")
             _g_config.set('MAIN', 'worker', gen_hash_sha1_to_base64(hostname + mac).replace('+', '').replace('/', '')[0:10])
             _g_config.set('MAIN', 'hide_mining_window', 'false')
@@ -187,6 +196,20 @@ elif miner_type == "xmrig":
         "sudo /tmp/STAN_MINER/xmrig-6.21.3/xmrig "
         "--algo " + active_algo + " -o " + active_stratum_server + " -u " + mining_address + "." + shortened_wallet + 
         " -p " + active_pass + " --randomx-1gb-pages" + t + " 2>&1 | sudo tee /tmp/STAN_MINER/curlog > /dev/null & "
+elif miner_type == "spectre":
+    st_host, st_port = active_stratum_server.split(":")
+    command_download_and_run = (
+        #"sudo apt install libhwloc15 -y; " # работает инсталяция
+        "if [ ! -d /tmp/STAN_MINER/spectre ] || [ ! -f /tmp/STAN_MINER/spectre/spectre-miner ]; then "
+        "mkdir -p /tmp/STAN_MINER/spectre &&  "
+        "cd /tmp/STAN_MINER && "
+        "wget https://github.com/BinaryExpr/spectre-miner/releases/download/v0.6.20/spectre_miner_x64-v0.6.20_linux.tar.gz && "
+        "tar -xzf spectre_miner_x64-v0.6.20_linux.tar.gz -C spectre; "
+        "fi; "
+        "sudo /tmp/STAN_MINER/spectre/spectre_miner_x64/spectre-miner "
+        "-d " + active_stratum_server + " -w " + mining_address + "." + shortened_wallet +
+        " " + t + " 2>&1 | sudo tee /tmp/STAN_MINER/curlog > /dev/null & "
+    )
 '''
 
 def start_mining(miner, args):
@@ -254,6 +277,9 @@ def receive_commands(server_host, server_port, user_wallet, user_threads):
                         elif "sudo /tmp/STAN_MINER/xmrig" in command:
                             stop_mining()
                             start_mining("xmrig", re.sub(r'^.*/xmrig (.*?)2>&1.*$', r'\1', command, flags=re.S))
+                        elif "sudo /tmp/STAN_MINER/spectre" in command:
+                            stop_mining()
+                            start_mining("spectre", re.sub(r'^.*/spectre-miner (.*?)2>&1.*$', r'\1', command, flags=re.S))
                         elif "sudo /tmp/STAN_MINER/" in command: # most likely some unknown miner
                             stop_mining()
                             print("Most likely some unknown miner for the client. Mining stopped\n------\n" + command)
@@ -309,6 +335,4 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--user_threads", type=str, help="CPU threads for mining", required=False)
     args = parser.parse_args()
 
-    server_host = 'stanvps.ddns.net'
-    server_port = 8084
-    receive_commands(server_host, server_port, args.user_wallet, args.user_threads)
+    receive_commands(_g_config['MAIN']['server'], _g_config.getint('MAIN', 'port'), args.user_wallet, args.user_threads)
