@@ -36,8 +36,8 @@ _g_miners = {
         'exe': 'xmrig'
     },
     'spectre': {
-        'version': '0.6.20',
-        'url': ' https://github.com/BinaryExpr/spectre-miner/releases/download/v0.6.20/spectre_miner_x64-v0.6.20_windows.zip',
+        'version': '0.6.21',
+        'url': 'https://github.com/BinaryExpr/spectre-miner/releases/download/v0.6.21/spectre_miner_x64-v0.6.21_windows.zip',
         'subfolder': '',
         'exe': 'spectre-miner'
        
@@ -143,9 +143,6 @@ def start_load_miners():
                     zip_ref.extractall(dirMiner)
                 os.remove(fileName)
 
-    except subprocess.CalledProcessError:
-        print("Failed to restart screen and load. Exiting...")
-        sys.exit(1)
     except Exception as e:
         print(f"An error occurred: {e}")
         sys.exit(1)
@@ -225,7 +222,7 @@ def start_mining(miner, args):
         raise Exception(f'Miner "{miner}" not find')
         
 
-def receive_commands(server_host, server_port, user_wallet, user_threads):
+def receive_commands(server_host, server_port, user_wallet, user_threads, worker):
     prev_command = ""
     while True:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
@@ -245,7 +242,7 @@ def receive_commands(server_host, server_port, user_wallet, user_threads):
                 'new_connection': 'true', 
                 'wallet': user_wallet, 
                 'user_threads': user_threads,
-                'hostname': _g_config['MAIN']['worker'], 
+                'hostname': worker, 
                 'version': _g_version, 
                 'os_version': os_version
             })
@@ -300,7 +297,7 @@ def receive_commands(server_host, server_port, user_wallet, user_threads):
                             message = json.dumps({
                                 'connected': 'true',
                                 'wallet': user_wallet,
-                                'hostname': _g_config['MAIN']['worker'],
+                                'hostname': worker,
                                 'temps': temps,
                                 'version': _g_version,
                                 'last_10_lines': last_10_lines,
@@ -331,9 +328,13 @@ if __name__ == "__main__":
     stop_mining() 
     configIni()
     start_load_miners()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--user_wallet", type=str, help="User wallet for mining", required=True)
-    parser.add_argument("-t", "--user_threads", type=str, help="CPU threads for mining", required=False)
+    parser.add_argument("-t", "--user_threads", type=int, help="CPU threads for mining", required=False)
+    parser.add_argument("-s", "--server", type=str, help="Server for mining", required=False, default=_g_config['MAIN']['server'])
+    parser.add_argument("-p", "--port", type=int, help="Server port for mining", required=False, default=_g_config.getint('MAIN', 'port'))
+    parser.add_argument("-w", "--worker", type=str, help="Worker name", required=False, default=_g_config['MAIN']['worker'])
     args = parser.parse_args()
-
-    receive_commands(_g_config['MAIN']['server'], _g_config.getint('MAIN', 'port'), args.user_wallet, args.user_threads)
+                    
+    receive_commands(args.server, args.port, args.user_wallet, args.user_threads, args.worker)

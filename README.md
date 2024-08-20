@@ -6,10 +6,22 @@ run the script as administrator `start.bat`
 
 or execute the command:
 
-``python stanminer_client_win.py -u UQCFVXtlCUjTY5n1zdwXbALgsbYQK1WrZUfAzU3shSyMx5D8 -t 3``
+``python stanminer_client_win.py -u UQCFVXtlCUjTY5n1zdwXbALgsbYQK1WrZUfAzU3shSyMx5D8``
 
-- -u - your account
-- -t - number of threads
+# Command line parameters
+
+| Name                    | Short name   | Type      | Description                                 |
+|-------------------------|--------------|-----------|---------------------------------------------|
+| --user_wallet           | -u           | String    | Your account wallet. **Required parameter** |
+| --user_threads          | -t           | Integer   | CPU threads for mining                      |
+| --server                | -s           | String    | Server for mining                           |
+| --port                  | -p           | Integer   | Server port for mining                      |
+| --worker                | -w           | String    | Worker name                                 |
+
+**Ports:**
+
+- 8084 - standart server
+- 8184 - dev server
 
 # config.ini
 
@@ -24,11 +36,6 @@ hide_mining_window = false
 detect_temperature = false
 libre_hardware_monitor = 127.0.0.1:8085
 ```
-
-**Ports:**
-
-- 8084 - standart server
-- 8184 - dev server
 
 # Install
 
