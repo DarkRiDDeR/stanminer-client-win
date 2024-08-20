@@ -11,7 +11,7 @@ or execute the command:
 - -u - your account
 - -t - number of threads
 
-# Config.ini
+# config.ini
 
 After the first run of the script, an additional file ``config.ini`` with settings will be created. In which, in particular, you can specify the name of the worker
 

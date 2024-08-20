@@ -215,6 +215,7 @@ elif miner_type == "spectre":
 def start_mining(miner, args):
     if miner in _g_miners:
         dir = os.path.join(miner, _g_miners[miner]['version'], _g_miners[miner]['subfolder'])
+        args = args.replace("'", "''")
         cmd = f"Start-Process -FilePath '{_g_miners[miner]['exe']}.exe' -WorkingDirectory '{dir}' -ArgumentList '{args}'"
         print(cmd)
         if _g_config.getboolean('MAIN', 'hide_mining_window'):
