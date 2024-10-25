@@ -1,5 +1,9 @@
 Windows client for StanMiner (https://stanvps.ddns.net/)
 
+**Current version - 0.1.0a**
+
+see CHANGELOG.md
+
 # Start example
 
 run the script as administrator `start.bat` 
@@ -18,10 +22,15 @@ or execute the command:
 | --port                  | -p           | Integer   | Server port for mining                      |
 | --worker                | -w           | String    | Worker name                                 |
 
+**Required parameters:**
+
+--user_wallet 
+--user_threads
+
 **Ports:**
 
-- 8084 - standart server
-- 8184 - dev server
+- 8101 - standart server
+- 8102 - dev server
 
 # config.ini
 
@@ -30,7 +39,7 @@ After the first run of the script, an additional file ``config.ini`` with settin
 ```
 [MAIN]
 server = stanvps.ddns.net
-port = 8084
+port = 8101
 worker = win-worker-test
 hide_mining_window = false
 detect_temperature = false
