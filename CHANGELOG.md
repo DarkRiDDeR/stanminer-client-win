@@ -13,7 +13,13 @@ Here we write upgrading notes
 ### Changed
  
 ### Fixed
+
+## [0.1.1а] - 2024-10-26
  
+### Fixed
+
+fix cpuminer-opt-rplant detect
+
 ## [0.1.0а] - 2024-10-24
   
 new stan-start client with the ability to switch between servers for mining different coins

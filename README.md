@@ -1,6 +1,6 @@
 Windows client for StanMiner (https://stanvps.ddns.net/)
 
-**Current version - 0.1.0a**
+**Current version - 0.1.1a**
 
 see CHANGELOG.md
 
@@ -14,18 +14,15 @@ or execute the command:
 
 # Command line parameters
 
-| Name                    | Short name   | Type      | Description                                 |
-|-------------------------|--------------|-----------|---------------------------------------------|
-| --user_wallet           | -u           | String    | Your account wallet. **Required parameter** |
-| --user_threads          | -t           | Integer   | CPU threads for mining                      |
-| --server                | -s           | String    | Server for mining                           |
-| --port                  | -p           | Integer   | Server port for mining                      |
-| --worker                | -w           | String    | Worker name                                 |
+| Name                    | Short name | Required parameter | Type      | Description                                    |
+|-------------------------|------------|--------------------|-----------|------------------------------------------------|
+| --user_wallet           | -u         | **Required**       | String    | Your account wallet                            |
+| --user_threads          | -t         | **Required**       | Integer   | CPU threads for mining                         |
+| --server                | -s         | -                  | String    | Server for mining                              |
+| --port                  | -p         | -                  | Integer   | Server port for mining                         |
+| --worker                | -w         | -                  | String    | Worker name                                    |
+| --debug                 |            | -                  | String    | Debug mode                                     |
 
-**Required parameters:**
-
---user_wallet 
---user_threads
 
 **Ports:**
 

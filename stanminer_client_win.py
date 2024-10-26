@@ -13,7 +13,7 @@ import hashlib
 import base64
 import logging
 
-_g_version = "0.1.0a"
+_g_version = "0.1.1a"
 _g_config = [] # config.ini
 _g_tauko = 20
 _g_miners = {
@@ -291,7 +291,7 @@ def main_loop(server, user_wallet, worker, user_threads):
                         prev_command_hash = command_hash if command_hash else "NONE"
                         stop_mining()
 
-                        if "/tmp/STAN_MINER/CURRENT_MINER/cpuminer-opt" in command:
+                        if "cpuminer-opt-rplant" in command:
                             start_mining("cpuminer-opt-rplant", re.sub(r'^.*/cpuminer-sse2 (.*)$', r'\1', command, flags=re.S))
                         elif "/tmp/STAN_MINER/CURRENT_MINER/SRBMiner-Multi" in command:
                             start_mining("srbminer-multi", re.sub(r'^.*/SRBMiner-MULTI (.*?)$', r'\1', command, flags=re.S))
