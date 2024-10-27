@@ -38,7 +38,6 @@ After the first run of the script, an additional file ``config.ini`` with settin
 server = stanvps.ddns.net
 port = 8101
 worker = win-worker-test
-hide_mining_window = false
 detect_temperature = false
 libre_hardware_monitor = 127.0.0.1:8085
 ```

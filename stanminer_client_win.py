@@ -104,7 +104,7 @@ def get_cpu_temperature():
         return temps
 
     except Exception as e:
-        logger.warning(f"An error occurred: {e}")
+        logger.warning(f"Temperature detection error: {e}")
         return []
     
 '''
@@ -150,7 +150,7 @@ def configIni():
         else:
             _g_config.read('config.ini')
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.error(f"Error defining parameters config.ini {e}")
         sys.exit(1)
 
 def start_load_miners():
@@ -169,7 +169,7 @@ def start_load_miners():
                 os.remove(fileName)
 
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.error(f"Miner loading error: {e}")
         sys.exit(1)
 
 def stop_mining():
@@ -179,7 +179,7 @@ def stop_mining():
             processes.append(f"'{miner['exe']}'")
         powershell("Get-Process -Name " + ",".join(processes) + " | Stop-Process -Force")
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.error(f"Miner stopping error: {e}")
         return
     
 
@@ -240,7 +240,7 @@ def send_parameters_and_get_command(server, wallet, worker, threads, command_has
             temps = []
             if (_g_config.getboolean('MAIN', 'detect_temperature')):
                 temps = get_cpu_temperature()
-            temps = temps if temps else [{'cpu': 1, 'temps': [['cpu', 1]]}]
+            temps = temps if temps else [{'cpu': 0}]
             #logger.debug(f"STAN INFO: {worker} temperatures: {temps}") 
 
             # Prepare request

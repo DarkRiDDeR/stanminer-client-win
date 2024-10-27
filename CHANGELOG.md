@@ -14,6 +14,22 @@ Here we write upgrading notes
  
 ### Fixed
 
+## [0.2.0а] - 2024-10-28
+
+changed the start of mining via a subprocess in python
+
+### Added
+
+add debug mode
+
+### Fixed
+
+Fixed blocking of mining start by antivirus when an exception was added. Blocking occurred due to process launch via powershell. Now this happens through a subprocess in python
+
+### Changed
+
+delete parameter `hide_mining_window` for `config.ini`
+
 ## [0.1.1а] - 2024-10-26
  
 ### Fixed
