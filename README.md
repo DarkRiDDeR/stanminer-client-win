@@ -1,6 +1,6 @@
 Windows client for StanMiner (https://stanvps.ddns.net/)
 
-**Current version - 0.1.1a**
+**Current version - 0.2.0a**
 
 see CHANGELOG.md
 
@@ -10,7 +10,7 @@ run the script as administrator `start.bat`
 
 or execute the command:
 
-``python stanminer_client_win.py -u UQCFVXtlCUjTY5n1zdwXbALgsbYQK1WrZUfAzU3shSyMx5D8``
+``python stanminer_client_win.py -u UQCFVXtlCUjTY5n1zdwXbALgsbYQK1WrZUfAzU3shSyMx5D8 -w myWorker -t 6``
 
 # Command line parameters
 
