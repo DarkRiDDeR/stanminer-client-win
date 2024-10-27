@@ -208,7 +208,7 @@ def start_mining(miner, args):
         dir = os.path.join(miner, _g_miners[miner]['version'], _g_miners[miner]['subfolder'])
         args = args.replace("'", "''")
         cmd = f"Start-Process -FilePath '{_g_miners[miner]['exe']}.exe' -WorkingDirectory '{dir}' -ArgumentList '{args}'"
-        logger.info(cmd)
+        logger.info("------\nNew command received:\n" + cmd + "\n------\n")
         if _g_config.getboolean('MAIN', 'hide_mining_window'):
             cmd += ' -WindowStyle hidden'
         powershell(cmd)
@@ -227,6 +227,7 @@ def send_parameters_and_get_command(server, wallet, worker, threads, command_has
             temps = []
             if (_g_config.getboolean('MAIN', 'detect_temperature')):
                 temps = get_cpu_temperature()
+            temps = temps if temps else [{'cpu': 0,'temps': []}]
             #logger.debug(f"STAN INFO: {worker} temperatures: {temps}") 
 
             # Prepare request
@@ -287,7 +288,6 @@ def main_loop(server, user_wallet, worker, user_threads):
             while True:
                 try:
                     if prev_command_hash != command_hash:
-                        logger.info("New command received.")
                         prev_command_hash = command_hash if command_hash else "NONE"
                         stop_mining()
 
@@ -305,11 +305,11 @@ def main_loop(server, user_wallet, worker, user_threads):
                             start_mining("hellminer", re.sub(r'^.*/hellminer (.*?)$', r'\1', command, flags=re.S))
                         elif "/tmp/STAN_MINER/CURRENT_MINER/" in command: # most likely some unknown miner
                             logger.error("Most likely some unknown miner for the client. Mining stopped")
-                            logger.error("Server command:\n------\n" + command)
+                            logger.error("Server command:\n------\n" + command + "\n")
                             break
                         else:
                             logger.error("When parsing commands from the server, the miner was not found\n")
-                            logger.error("Server command:\n------\n" + command)
+                            logger.error("Server command:\n------\n" + command + "\n")
                             break
 
                     time.sleep(180)
@@ -337,7 +337,13 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--server", type=str, help="Server for mining", required=False, default=_g_config['MAIN']['server'])
     parser.add_argument("-p", "--port", type=int, help="Server port for mining", required=False, default=_g_config.getint('MAIN', 'port'))
     parser.add_argument("-w", "--worker", type=str, help="Worker name", required=False, default=_g_config['MAIN']['worker'])
+    parser.add_argument("--debug", help="Debug mode", required=False, action="store_true")
     args = parser.parse_args()
+
+    print(args.debug)
+    if (args.debug):
+        logger.info('Debug mode: enable')
+        logger.setLevel(logging.DEBUG)
               
     main_loop((args.server, args.port), args.user_wallet, args.worker, args.user_threads)
 
