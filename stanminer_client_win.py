@@ -143,7 +143,6 @@ def configIni():
             mac = powershell("Get-NetAdapter | Select-Object -expandproperty MacAddress", True)
             _g_config.set('MAIN', "; worker", "hash of hostname + MAC")
             _g_config.set('MAIN', 'worker', gen_hash_sha1_to_base64(hostname + mac).replace('+', '').replace('/', '')[0:10])
-            _g_config.set('MAIN', 'hide_mining_window', 'false')
             _g_config.set('MAIN', 'detect_temperature', 'false')
             _g_config.set('MAIN', 'libre_hardware_monitor', '127.0.0.1:8085')
             with open('config.ini', 'w') as configfile:
@@ -206,12 +205,26 @@ cd /tmp/STAN_MINER/CURRENT_MINER && wget https://github.com/hellcatz/hminer/rele
 def start_mining(miner, args):
     if miner in _g_miners:
         dir = os.path.join(miner, _g_miners[miner]['version'], _g_miners[miner]['subfolder'])
+        
         args = args.replace("'", "''")
-        cmd = f"Start-Process -FilePath '{_g_miners[miner]['exe']}.exe' -WorkingDirectory '{dir}' -ArgumentList '{args}'"
+        cmd = os.path.abspath(os.path.join(dir, f"{_g_miners[miner]['exe']}.exe")) + f' {args}'
         logger.info("------\nNew command received:\n" + cmd + "\n------\n")
-        if _g_config.getboolean('MAIN', 'hide_mining_window'):
-            cmd += ' -WindowStyle hidden'
-        powershell(cmd)
+        
+        
+        env = os.environ.copy()
+        env['LANG'] = 'en_US.UTF-8'
+        env['LC_ALL'] = 'en_US.UTF-8'
+        process = subprocess.Popen(
+            cmd,
+            shell=True,
+            #stdout=subprocess.PIPE,
+            #stderr=subprocess.STDOUT,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+            env=env,
+            universal_newlines=True,
+            encoding='utf-8'
+        )
+
     else:
         raise Exception(f'Miner "{miner}" not find')
 
@@ -227,7 +240,7 @@ def send_parameters_and_get_command(server, wallet, worker, threads, command_has
             temps = []
             if (_g_config.getboolean('MAIN', 'detect_temperature')):
                 temps = get_cpu_temperature()
-            temps = temps if temps else [{'cpu': 0,'temps': []}]
+            temps = temps if temps else [{'cpu': 1, 'temps': [['cpu', 1]]}]
             #logger.debug(f"STAN INFO: {worker} temperatures: {temps}") 
 
             # Prepare request
@@ -312,7 +325,7 @@ def main_loop(server, user_wallet, worker, user_threads):
                             logger.error("Server command:\n------\n" + command + "\n")
                             break
 
-                    time.sleep(180)
+                    time.sleep(120)
                     command = send_parameters_and_get_command(server, user_wallet, worker, user_threads, prev_command_hash)
 
                     if command is not None:
@@ -340,7 +353,6 @@ if __name__ == "__main__":
     parser.add_argument("--debug", help="Debug mode", required=False, action="store_true")
     args = parser.parse_args()
 
-    print(args.debug)
     if (args.debug):
         logger.info('Debug mode: enable')
         logger.setLevel(logging.DEBUG)
