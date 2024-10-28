@@ -13,7 +13,7 @@ import hashlib
 import base64
 import logging
 
-_g_version = "0.1.1a"
+_g_version = "0.2.0a"
 _g_config = [] # config.ini
 _g_tauko = 20
 _g_miners = {
@@ -339,11 +339,30 @@ def main_loop(server, user_wallet, worker, user_threads):
             time.sleep(_g_tauko)
                 
 
-if __name__ == "__main__":  
-    stop_mining() 
-    configIni()
-    start_load_miners()
+if __name__ == "__main__":
+    version = _g_version + (" " * (15 - len(_g_version)))
+    logger.info(
+f'''////////////////////////////////////////////////////////////////////////
+//                                                                    //
+//   #####                          #####                             //
+//  #     # #####   ##   #    #    #     # #####   ##   #####  #####  //
+//  #         #    #  #  ##   #    #         #    #  #  #    #   #    //
+//   #####    #   #    # # #  #     #####    #   #    # #    #   #    //
+//        #   #   ###### #  # #          #   #   ###### #####    #    //
+//  #     #   #   #    # #   ##    #     #   #   #    # #   #    #    //
+//   #####    #   #    # #    #     #####    #   #    # #    #   #    //
+//                                                                    //
+//  #     # # #    # ###### #####                                     //
+//  ##   ## # ##   # #      #    #                                    //
+//  # # # # # # #  # #####  #    #                                    //
+//  #  #  # # #  # # #      #####                                     //
+//  #     # # #   ## #      #   #                                     //
+//  #     # # #    # ###### #    #                                    //
+//                                                                    //
+//  Version {   version   }                                           //
+////////////////////////////////////////////////////////////////////////''')
 
+    configIni()
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--user_wallet", type=str, help="User wallet for mining", required=True)
     parser.add_argument("-t", "--user_threads", type=int, help="CPU threads for mining", required=True)
@@ -356,7 +375,9 @@ if __name__ == "__main__":
     if (args.debug):
         logger.info('Debug mode: enable')
         logger.setLevel(logging.DEBUG)
-              
+
+    start_load_miners()
+    stop_mining() 
     main_loop((args.server, args.port), args.user_wallet, args.worker, args.user_threads)
 
     logger.info("Client stopped.")

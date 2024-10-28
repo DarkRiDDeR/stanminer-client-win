@@ -21,7 +21,7 @@ or execute the command:
 | --server                | -s         | -                  | String    | Server for mining                              |
 | --port                  | -p         | -                  | Integer   | Server port for mining                         |
 | --worker                | -w         | -                  | String    | Worker name                                    |
-| --debug                 |            | -                  | String    | Debug mode                                     |
+| --debug                 |            | -                  |           | Debug mode                                     |
 
 
 **Ports:**
