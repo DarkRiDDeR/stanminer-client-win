@@ -1,6 +1,6 @@
 Windows client for StanMiner (https://stanvps.ddns.net/)
 
-**Current version - 0.2.0a**
+**Current version - 0.2.1-alpha**
 
 see CHANGELOG.md
 

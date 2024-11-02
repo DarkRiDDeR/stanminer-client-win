@@ -14,7 +14,13 @@ Here we write upgrading notes
  
 ### Fixed
 
-## [0.2.0а] - 2024-10-28
+## [0.2.1-alpha] - 2024-11-02
+
+### Fixed
+
+fix detect temperature for some AMD CPU from Libre-hardware-monitor
+
+## [0.2.0-alpha] - 2024-10-28
 
 changed the start of mining via a subprocess in python
 
@@ -30,13 +36,13 @@ Fixed blocking of mining start by antivirus when an exception was added. Blockin
 
 delete parameter `hide_mining_window` for `config.ini`
 
-## [0.1.1а] - 2024-10-26
+## [0.1.1-alpha] - 2024-10-26
  
 ### Fixed
 
 fix cpuminer-opt-rplant detect
 
-## [0.1.0а] - 2024-10-24
+## [0.1.0-alpha] - 2024-10-24
   
 new stan-start client with the ability to switch between servers for mining different coins
  

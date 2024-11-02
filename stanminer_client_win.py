@@ -13,7 +13,7 @@ import hashlib
 import base64
 import logging
 
-_g_version = "0.2.0a"
+_g_version = "0.2.1-alpha"
 _g_config = [] # config.ini
 _g_tauko = 20
 _g_miners = {
@@ -91,16 +91,28 @@ def get_cpu_temperature():
         temps = []
         d = requests.get('http://' + _g_config['MAIN']['libre_hardware_monitor'] + '/data.json')
         d = d.json()
+        #with open('./data.json', 'r') as file:
+        #    d = json.load(file)
+
         re_pattern_temper = r'^.*?([\d]+).*$'
         for device in d['Children'][0]['Children']:
             if re.search(r'^(Intel|AMD)\s', device['Text'], flags=re.IGNORECASE):
                 for group in device['Children']:
                     if group['Text'] == 'Temperatures':
+                        firstCore=''
+                        cpu=''
                         for temper in group['Children']:
-                            if temper['Text'] == 'CPU Package':
-                                t = re.sub(re_pattern_temper, r'\1', temper['Value'])
-                                t = int(t) if t.isdigit() else None
-                                temps.append({'cpu': t,'temps': []})
+                            name = temper['Text'].lower()
+                            if ('tctl/tdie' in name) or ('package' in name):
+                                cpu=temper['Value']
+                                break
+                            elif (not firstCore) and ('core' in name):
+                                firstCore = temper['Value']
+
+                        cpu = cpu if cpu else firstCore
+                        cpu = re.sub(re_pattern_temper, r'\1', cpu)
+                        cpu = int(cpu) if cpu.isdigit() else None
+                        temps.append({'cpu': cpu,'temps': []})
         return temps
 
     except Exception as e:
