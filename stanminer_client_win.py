@@ -293,7 +293,7 @@ def send_parameters_and_get_command(server, wallet, worker, threads, command_has
                 logger.warning(f"Unknown response from server: {response}")
                 return None
     except Exception as e:
-        #logger.error(f"Error communicating with server {server_address}: {e}")
+        logger.error(f"Error communicating with server {server}: {e}")
         return None      
 
 def main_loop(server, user_wallet, worker, user_threads):
