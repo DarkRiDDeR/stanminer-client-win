@@ -1,11 +1,13 @@
 import argparse
 import subprocess
+import threading
 import socket
 import time
 import os
 import sys
 import zipfile
 import platform
+import signal
 import json
 import re
 import configparser
@@ -13,9 +15,8 @@ import hashlib
 import base64
 import logging
 
-_g_version = "0.2.1-alpha"
+_g_version = "0.3.0-beta"
 _g_config = [] # config.ini
-_g_tauko = 20
 _g_miners = {
     'binaryexpr': {
         'version': '0.6.26',
@@ -54,6 +55,10 @@ _g_miners = {
         'exe': 'xmrig'
     },
 }
+# Global variables
+_g_process = None
+_g_shutdown_event = threading.Event()
+_g_hashrate = [0, ''] # [value, unit]
 
 # ANSI-code colors 
 YELLOW = "\033[93m"
@@ -183,16 +188,6 @@ def start_load_miners():
     except Exception as e:
         logger.error(f"Miner loading error: {e}")
         sys.exit(1)
-
-def stop_mining():
-    try:
-        processes = []
-        for miner in _g_miners.values():
-            processes.append(f"'{miner['exe']}'")
-        powershell("Get-Process -Name " + ",".join(processes) + " | Stop-Process -Force")
-    except Exception as e:
-        logger.error(f"Miner stopping error: {e}")
-        return
     
 
 ''' FROM SERVER
@@ -215,34 +210,100 @@ cd /tmp/STAN_MINER/CURRENT_MINER && wget https://github.com/hellcatz/hminer/rele
 '''
 
 def start_mining(miner, args):
+    global _g_process
+
     if miner in _g_miners:
         dir = os.path.join(miner, _g_miners[miner]['version'], _g_miners[miner]['subfolder'])
-        
         args = args.replace("'", "''")
         cmd = os.path.abspath(os.path.join(dir, f"{_g_miners[miner]['exe']}.exe")) + f' {args}'
         logger.info("------\nNew command received:\n" + cmd + "\n------\n")
         
-        
         env = os.environ.copy()
         env['LANG'] = 'en_US.UTF-8'
         env['LC_ALL'] = 'en_US.UTF-8'
-        process = subprocess.Popen(
-            cmd,
-            shell=True,
-            #stdout=subprocess.PIPE,
-            #stderr=subprocess.STDOUT,
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
-            env=env,
-            universal_newlines=True,
-            encoding='utf-8'
-        )
-
+        env['SYSTEMD_COLORS'] = '1'
+        
+        if miner == 'xmrig' or miner == 'cpuminer-opt-rplant': # detect hashrate
+            _g_process = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                env=env,
+                universal_newlines=True,
+                encoding='utf-8'
+            )
+        else:
+            _g_process = subprocess.Popen(
+                cmd,
+                shell=True,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                env=env,
+                universal_newlines=True,
+                encoding='utf-8'
+            )
+        threading.Thread(target=read_process_output, args=(_g_process,miner), daemon=True).start()
     else:
         raise Exception(f'Miner "{miner}" not find')
 
-def send_parameters_and_get_command(server, wallet, worker, threads, command_hash):
-    global _g_config, _g_version
+def read_process_output(process, miner):
+    global _g_hashrate
+    try:
+        for line in process.stdout:
+            if isinstance(line, bytes):
+                line = line.decode('utf-8', errors='ignore')
+            line = line.strip()
+            if line:
+                print(line)
+                regexTmpl = ""
+                if miner == 'xmrig' and 'speed' in line: # [2025-01-14 08:33:06.380]  miner    speed 10s/60s/15m 4808.4 4744.6 n/a H/s max 4808.4 H/s
+                    regexTmpl= r"speed\s+10s/60s/15m\s+([\d\.]+).*?([kmgt]?h/s)"
+                #elif miner == 'srbminer-multi' and 'total' in line:
+                #    regexTmpl= r"total\s*:?\s*([\d\.]+)\s+([kmgt]?h/s)"
+                elif miner == 'cpuminer-opt-rplant' and 'Accepted' in line: #  Accepted 15/15 (100.0%), diff 0.00000711, 990.92 H/s, 26.424 sec (167ms)
+                    regexTmpl= r"([\d\.]+)\s*([kmgt]?h/s)"
+                else:
+                    continue
+                
+                match = re.search(regexTmpl, line, re.IGNORECASE)
+                if match:
+                    _g_hashrate = [match.group(1), match.group(2)]
+                    print(f"{YELLOW}STAN LOG LINE: hashrate - {_g_hashrate[0]} {_g_hashrate[1]}{RESET}")
+            
+    except UnicodeDecodeError as e:
+        logger.error(f"Unicode decode error: {e}")
+    except Exception as e:
+        logger.error(f"Error reading process output: {e}")
 
+def signal_handler(sig, frame):
+    logger.info('Termination signal received. Stopping client...')
+    _g_shutdown_event.set()
+    terminate_process()
+    sys.exit(0)
+
+def terminate_process():
+    global _g_process, _g_hashrate
+    if _g_process:
+        logger.debug(f"Terminating process PID {_g_process.pid}...")
+        _g_hashrate = [0, '']
+        try:
+            subprocess.run(f"TASKKILL /F /PID {_g_process.pid} /T", shell=True)
+            _g_process.wait(timeout=5)
+            logger.debug(f"Process PID {_g_process.pid} terminated.")
+        except subprocess.TimeoutExpired:
+            logger.warning(f"Process PID {_g_process.pid} did not terminate in time. Killing...")
+            subprocess.run(f"TASKKILL /F /PID {_g_process.pid} /T", shell=True)
+            _g_process.wait()
+            logger.debug(f"Process PID {_g_process.pid} killed.")
+        except ProcessLookupError:
+            logger.warning(f"Process PID {_g_process.pid} already terminated.")
+        except Exception as e:
+            logger.error(f"Error terminating process PID {_g_process.pid}: {e}")
+        finally:
+            _g_process = None
+
+def send_parameters_and_get_command(server, wallet, worker, threads, command_hash):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
             client_socket.connect(server)
@@ -262,9 +323,9 @@ def send_parameters_and_get_command(server, wallet, worker, threads, command_has
                 'threads': threads,
                 'command_hash': command_hash,
                 'temps': temps,
-                'hashrate_value': 0,
-                'hashrate_unit': 0,
-                'platform': 'Windows client ' + _g_version
+                'hashrate_value': _g_hashrate[0],
+                'hashrate_unit': _g_hashrate[1],
+                'client': 'Windows ' + _g_version
             }
             logger.debug(f"Send request to server {server}:\n{request}\n\n") # {command}
 
@@ -305,16 +366,16 @@ def main_loop(server, user_wallet, worker, user_threads):
 
     while True:
         command = send_parameters_and_get_command(server, user_wallet, worker, user_threads, prev_command_hash)
-
+        
         if command is not None:
             command_hash = hashlib.sha256(command.encode('utf-8')).hexdigest()
             logger.info("STAN-START is active")
 
-            while True:
+            while not _g_shutdown_event.is_set():
                 try:
                     if prev_command_hash != command_hash:
                         prev_command_hash = command_hash if command_hash else "NONE"
-                        stop_mining()
+                        terminate_process()
 
                         if "cpuminer-opt-rplant" in command:
                             start_mining("cpuminer-opt-rplant", re.sub(r'^.*/cpuminer-sse2 (.*)$', r'\1', command, flags=re.S))
@@ -337,8 +398,12 @@ def main_loop(server, user_wallet, worker, user_threads):
                             logger.error("Server command:\n------\n" + command + "\n")
                             break
 
-                    time.sleep(120)
                     command = send_parameters_and_get_command(server, user_wallet, worker, user_threads, prev_command_hash)
+                    logger.debug(f"Waiting 120 seconds before the next poll.")
+                    for _ in range(120):
+                        if _g_shutdown_event.is_set():
+                            break
+                        time.sleep(1)
 
                     if command is not None:
                         command_hash = hashlib.sha256(command.encode('utf-8')).hexdigest()
@@ -347,8 +412,8 @@ def main_loop(server, user_wallet, worker, user_threads):
                     break
 
         else:
-            logger.info(f"Command not received. Retrying in {_g_tauko} seconds...")
-            time.sleep(_g_tauko)
+            logger.info(f"Command not received. Retrying in 20 seconds...")
+            time.sleep(20)
                 
 
 if __name__ == "__main__":
@@ -388,8 +453,11 @@ f'''////////////////////////////////////////////////////////////////////////
         logger.info('Debug mode: enable')
         logger.setLevel(logging.DEBUG)
 
+    # Handle termination signals
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     start_load_miners()
-    stop_mining() 
     main_loop((args.server, args.port), args.user_wallet, args.worker, args.user_threads)
 
     logger.info("Client stopped.")

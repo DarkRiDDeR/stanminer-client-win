@@ -14,6 +14,16 @@ Here we write upgrading notes
  
 ### Fixed
 
+## [0.3.0-beta] - 2025-01-14
+
+### Added
+
+add detect hashrate for xmrig, cpuminer
+
+### Fixed
+
+fix kill processes of other miners
+
 ## [0.2.1-alpha] - 2024-11-02
 
 ### Fixed
