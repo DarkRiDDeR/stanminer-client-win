@@ -14,6 +14,17 @@ Here we write upgrading notes
  
 ### Fixed
 
+## [0.3.1-beta] - 2025-02-08
+
+### Changed
+ 
+change run from bat script to run from powershell script
+
+### Fixed
+
+fix error "not recognized as an internal or external command,
+operable program or batch file" for path with spaces
+
 ## [0.3.0-beta] - 2025-01-14
 
 ### Added

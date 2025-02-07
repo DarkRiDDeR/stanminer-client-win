@@ -215,7 +215,8 @@ def start_mining(miner, args):
     if miner in _g_miners:
         dir = os.path.join(miner, _g_miners[miner]['version'], _g_miners[miner]['subfolder'])
         args = args.replace("'", "''")
-        cmd = os.path.abspath(os.path.join(dir, f"{_g_miners[miner]['exe']}.exe")) + f' {args}'
+        cmd = os.path.abspath(os.path.join(dir, f"{_g_miners[miner]['exe']}.exe"))
+        cmd = f'"{cmd}" {args}'
         logger.info("------\nNew command received:\n" + cmd + "\n------\n")
         
         env = os.environ.copy()

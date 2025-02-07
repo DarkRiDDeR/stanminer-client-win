@@ -1,22 +1,24 @@
 Windows client for StanMiner (https://stanvps.ddns.net/)
 
-**Current version - 0.3.0-beta**
+**Current version - 0.3.1-beta**
 
 see CHANGELOG.md
 
 # Start example
 
-run the script as administrator `start.bat` 
+run the powershell script as administrator `start.ps1`
+
+or run script with automatic request for administrator privileges `start_admin_powershell.bat`
 
 or execute the command:
 
-``python stanminer_client_win.py -u UQCFVXtlCUjTY5n1zdwXbALgsbYQK1WrZUfAzU3shSyMx5D8 -w myWorker -t 6``
+``python stanminer_client_win.py -u stan63 -w myWorker -t 6``
 
 # Command line parameters
 
 | Name                    | Short name | Required parameter | Type      | Description                                    |
 |-------------------------|------------|--------------------|-----------|------------------------------------------------|
-| --user_wallet           | -u         | **Required**       | String    | Your account wallet                            |
+| --user_wallet           | -u         | **Required**       | String    | Your account UID                               |
 | --user_threads          | -t         | **Required**       | Integer   | CPU threads for mining                         |
 | --server                | -s         | -                  | String    | Server for mining                              |
 | --port                  | -p         | -                  | Integer   | Server port for mining                         |
