@@ -15,7 +15,7 @@ import hashlib
 import base64
 import logging
 
-_g_version = "0.3.0-beta"
+_g_version = "0.3.1-beta"
 _g_config = [] # config.ini
 _g_miners = {
     'binaryexpr': {

@@ -29,7 +29,6 @@ or execute the command:
 **Ports:**
 
 - 8101 - standart server
-- 8102 - dev server
 
 # config.ini
 
