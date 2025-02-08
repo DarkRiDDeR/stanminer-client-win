@@ -6,7 +6,6 @@ import time
 import os
 import sys
 import zipfile
-import platform
 import signal
 import json
 import re
@@ -15,46 +14,9 @@ import hashlib
 import base64
 import logging
 
-_g_version = "0.3.1-beta"
-_g_config = [] # config.ini
-_g_miners = {
-    'binaryexpr': {
-        'version': '0.6.26',
-        'url': 'https://github.com/BinaryExpr/spectre-miner/releases/download/v0.6.26/spectre_miner_x64-v0.6.26_windows.zip',
-        'subfolder': '',
-        'exe': 'spectre-miner'
-    },
-    'cpuminer-opt-rplant': {
-        'version': '5.0.41',
-        'url': 'https://github.com/rplant8/cpuminer-opt-rplant/releases/download/5.0.41/cpuminer-opt-win-5.0.41.zip',
-        'subfolder': '',
-        'exe': 'cpuminer-sse2'
-    },
-    'hellminer': {
-        'version': '0.59.1',
-        'url': 'https://github.com/hellcatz/hminer/releases/download/v0.59.1/hellminer_win64_avx2.zip',
-        'subfolder': '',
-        'exe': 'hellminer'
-    },
-    'tnn-miner': {
-        'version': '0.4.4-r2',
-        'url': 'https://gitlab.com/Tritonn204/tnn-miner/-/releases/0.4.4-r2/downloads/Tnn-miner-win64-0.4.4-r2.zip',
-        'subfolder': '',
-        'exe': 'tnn-miner-cpu'
-    },
-    'srbminer-multi': {
-        'version': '2.6.9',
-        'url': 'https://github.com/doktor83/SRBMiner-Multi/releases/download/2.6.9/SRBMiner-Multi-2-6-9-win64.zip',
-        'subfolder': 'SRBMiner-Multi-2-6-9',
-        'exe': 'SRBMiner-MULTI'
-    },
-    'xmrig': {
-        'version': '6.22.1',
-        'url': 'https://github.com/xmrig/xmrig/releases/download/v6.22.1/xmrig-6.22.1-gcc-win64.zip',
-        'subfolder': 'xmrig-6.22.1',
-        'exe': 'xmrig'
-    },
-}
+_g_version = "0.4.0-beta"
+_g_config = {} # config.ini
+_g_miners = {}
 # Global variables
 _g_process = None
 _g_shutdown_event = threading.Event()
@@ -119,7 +81,6 @@ def get_cpu_temperature():
                         cpu = int(cpu) if cpu.isdigit() else None
                         temps.append({'cpu': cpu,'temps': []})
         return temps
-
     except Exception as e:
         logger.warning(f"Temperature detection error: {e}")
         return []
@@ -131,7 +92,6 @@ Starting new HTTP connection (1): 127.0.0.1:8085
 http://127.0.0.1:8085 "GET /data.json HTTP/11" 200 3637
 Send request to server ('stanvps.ddns.net', 8101):
 {'wallet': 'UQCFVXtlCUjTY5n1zdwXbALgsbYQK1WrZUfAzU3shSyMx5D8', 'worker': 'm2670WIN', 'threads': 48, 'command_hash': 'NONE', 'temps': [{'cpu': 38, 'temps': []}, {'cpu': 38, 'temps': []}], 'hashrate_value': '', 'hashrate_unit': ''}
-
 
 No response from server.
 Command not received. Retrying in 20 seconds...
@@ -148,32 +108,26 @@ def powershell(cmd, onlyStdoutResult = False):
     return res
 
 def configIni():
-    global _g_config
+    global _g_config, _g_miners
     try:
         _g_config = configparser.ConfigParser()
-        if not os.path.exists("config.ini"):
-            _g_config.add_section('MAIN')
-            _g_config.set('MAIN', 'server', 'stanvps.ddns.net')
-            _g_config.set('MAIN', 'port', '8101')
-            # generate hash of hostname + MAC
-            hostname = powershell("hostname", True)
-            mac = powershell("Get-NetAdapter | Select-Object -expandproperty MacAddress", True)
-            _g_config.set('MAIN', "; worker", "hash of hostname + MAC")
-            _g_config.set('MAIN', 'worker', gen_hash_sha1_to_base64(hostname + mac).replace('+', '').replace('/', '')[0:10])
-            _g_config.set('MAIN', 'detect_temperature', 'false')
-            _g_config.set('MAIN', 'libre_hardware_monitor', '127.0.0.1:8085')
-            with open('config.ini', 'w') as configfile:
-                _g_config.write(configfile)
-        else:
-            _g_config.read('config.ini')
+        # generate hash of hostname + MAC
+        #hostname = powershell("hostname", True)
+        #mac = powershell("Get-NetAdapter | Select-Object -expandproperty MacAddress", True)
+        _g_config.read('config.ini')
+        _g_miners['binaryexpr']             = _g_config['binaryexpr']
+        _g_miners['cpuminer-opt-rplant']    = _g_config['cpuminer-opt-rplant']
+        _g_miners['hellminer']              = _g_config['hellminer']
+        _g_miners['tnn-miner']              = _g_config['tnn-miner']
+        _g_miners['srbminer-multi']         = _g_config['srbminer-multi']
+        _g_miners['xmrig']                  = _g_config['xmrig']
     except Exception as e:
-        logger.error(f"Error defining parameters config.ini {e}")
+        logger.error(f"Error config.ini: {e}")
         sys.exit(1)
 
 def start_load_miners():
     try:
         dir = "./"
-
         for minerName, miner in _g_miners.items():
             dirMiner = os.path.join(dir, minerName + '/' + miner['version'] + '/')
             fileName = os.path.basename(miner['url'])
@@ -184,19 +138,12 @@ def start_load_miners():
                 with zipfile.ZipFile(fileName,"r") as zip_ref:
                     zip_ref.extractall(dirMiner)
                 os.remove(fileName)
-
     except Exception as e:
         logger.error(f"Miner loading error: {e}")
         sys.exit(1)
     
 
 ''' FROM SERVER
-
-rm -rf /tmp/STAN_MINER/CURRENT_MINER;
-mkdir -p /tmp/STAN_MINER/CURRENT_MINER;
-cd /tmp/STAN_MINER/CURRENT_MINER && wget https://stanvps.ddns.net/dev-docs/tnn-miner-super.tar.gz && tar -xzf tnn-miner-super.tar.gz;
-/tmp/STAN_MINER/CURRENT_MINER/tnn-miner --dev-fee 1 --daemon-address 93.100.220.206 --port 8114 --wallet STAN_WALLET --worker-name STAN_WORKER --threads STAN_THREADS
-
 rm -rf /tmp/STAN_MINER/CURRENT_MINER;
 mkdir -p /tmp/STAN_MINER/CURRENT_MINER;
 cd /tmp/STAN_MINER/CURRENT_MINER && wget https://github.com/xmrig/xmrig/releases/download/v6.21.3/xmrig-6.21.3-linux-static-x64.tar.gz && tar -xzf xmrig-6.21.3-linux-static-x64.tar.gz;
@@ -205,20 +152,21 @@ cd /tmp/STAN_MINER/CURRENT_MINER && wget https://github.com/xmrig/xmrig/releases
 rm -rf /tmp/STAN_MINER/CURRENT_MINER; mkdir -p /tmp/STAN_MINER/CURRENT_MINER;
 cd /tmp/STAN_MINER/CURRENT_MINER && wget https://github.com/hellcatz/hminer/releases/download/v0.59.1/hellminer_linux64.tar.gz && tar -xzf hellminer_linux64.tar.gz;
 /tmp/STAN_MINER/CURRENT_MINER/hellminer -c stratum+tcp://93.100.220.206:8115 -u STAN_WALLET.STAN_WORKER -p d=16384S --cpu=STAN_THREADS
-
-    )
 '''
 
 def start_mining(miner, args):
     global _g_process
 
     if miner in _g_miners:
-        dir = os.path.join(miner, _g_miners[miner]['version'], _g_miners[miner]['subfolder'])
+        dir = os.path.join(miner, _g_miners[miner]['version'])
+        if 'subfolder' in _g_miners[miner]:
+            dir = os.path.join(dir, _g_miners[miner]['subfolder'])
         args = args.replace("'", "''")
-        cmd = os.path.abspath(os.path.join(dir, f"{_g_miners[miner]['exe']}.exe"))
+        cmd = os.path.abspath(os.path.join(dir, f"{_g_miners[miner]['exe']}"))
         cmd = f'"{cmd}" {args}'
+        if 'args' in _g_miners[miner]:
+            cmd += ' ' + _g_miners[miner]['args']
         logger.info("------\nNew command received:\n" + cmd + "\n------\n")
-        
         env = os.environ.copy()
         env['LANG'] = 'en_US.UTF-8'
         env['LC_ALL'] = 'en_US.UTF-8'
@@ -235,6 +183,7 @@ def start_mining(miner, args):
                 universal_newlines=True,
                 encoding='utf-8'
             )
+            threading.Thread(target=read_process_output, args=(_g_process,miner), daemon=True).start()
         else:
             _g_process = subprocess.Popen(
                 cmd,
@@ -244,7 +193,7 @@ def start_mining(miner, args):
                 universal_newlines=True,
                 encoding='utf-8'
             )
-        threading.Thread(target=read_process_output, args=(_g_process,miner), daemon=True).start()
+            threading.Thread(args=(_g_process,miner), daemon=True).start()
     else:
         raise Exception(f'Miner "{miner}" not find')
 
@@ -367,29 +316,20 @@ def main_loop(server, user_wallet, worker, user_threads):
 
     while True:
         command = send_parameters_and_get_command(server, user_wallet, worker, user_threads, prev_command_hash)
-        
         if command is not None:
             command_hash = hashlib.sha256(command.encode('utf-8')).hexdigest()
             logger.info("STAN-START is active")
-
             while not _g_shutdown_event.is_set():
                 try:
                     if prev_command_hash != command_hash:
                         prev_command_hash = command_hash if command_hash else "NONE"
                         terminate_process()
+                        search = re.search(r'^.*/tmp/STAN_MINER/CURRENT_MINER/\S*?(SRBMiner-Multi|xmrig|tnn-miner|hellminer) (.*)$', command, flags=re.I | re.S)
 
-                        if "cpuminer-opt-rplant" in command:
-                            start_mining("cpuminer-opt-rplant", re.sub(r'^.*/cpuminer-sse2 (.*)$', r'\1', command, flags=re.S))
-                        elif "/tmp/STAN_MINER/CURRENT_MINER/SRBMiner-Multi" in command:
-                            start_mining("srbminer-multi", re.sub(r'^.*/SRBMiner-MULTI (.*?)$', r'\1', command, flags=re.S))
-                        elif "/tmp/STAN_MINER/CURRENT_MINER/xmrig" in command:
-                            start_mining("xmrig", re.sub(r'^.*/xmrig (.*?)$', r'\1', command, flags=re.S))
+                        if search:
+                            start_mining(search[1].lower(), search[2])
                         elif "/tmp/STAN_MINER/CURRENT_MINER/spectre" in command:
                             start_mining("binaryexpr", re.sub(r'^.*/spectre-miner (.*?)$', r'\1', command, flags=re.S))
-                        elif "/tmp/STAN_MINER/CURRENT_MINER/tnn-miner" in command:
-                            start_mining("tnn-miner", re.sub(r'^.*/tnn-miner (.*?)$', r'\1', command, flags=re.S))
-                        elif "/tmp/STAN_MINER/CURRENT_MINER/hellminer" in command:
-                            start_mining("hellminer", re.sub(r'^.*/hellminer (.*?)$', r'\1', command, flags=re.S))
                         elif "/tmp/STAN_MINER/CURRENT_MINER/" in command: # most likely some unknown miner
                             logger.error("Most likely some unknown miner for the client. Mining stopped")
                             logger.error("Server command:\n------\n" + command + "\n")
@@ -411,12 +351,11 @@ def main_loop(server, user_wallet, worker, user_threads):
                 except Exception as e:
                     logger.error(f"Error sending system parameters: {e}")
                     break
-
         else:
             logger.info(f"Command not received. Retrying in 20 seconds...")
             time.sleep(20)
                 
-
+                
 if __name__ == "__main__":
     version = _g_version + (" " * (15 - len(_g_version)))
     logger.info(
@@ -439,14 +378,13 @@ f'''////////////////////////////////////////////////////////////////////////
 //                                                                    //
 //  Version {   version   }                                           //
 ////////////////////////////////////////////////////////////////////////''')
-
     configIni()
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--user_wallet", type=str, help="User wallet for mining", required=True)
     parser.add_argument("-t", "--user_threads", type=int, help="CPU threads for mining", required=True)
     parser.add_argument("-s", "--server", type=str, help="Server for mining", required=False, default=_g_config['MAIN']['server'])
     parser.add_argument("-p", "--port", type=int, help="Server port for mining", required=False, default=_g_config.getint('MAIN', 'port'))
-    parser.add_argument("-w", "--worker", type=str, help="Worker name", required=False, default=_g_config['MAIN']['worker'])
+    parser.add_argument("-w", "--worker", type=str, help="Worker name", required=True)
     parser.add_argument("--debug", help="Debug mode", required=False, action="store_true")
     args = parser.parse_args()
 
@@ -460,5 +398,4 @@ f'''////////////////////////////////////////////////////////////////////////
 
     start_load_miners()
     main_loop((args.server, args.port), args.user_wallet, args.worker, args.user_threads)
-
     logger.info("Client stopped.")
