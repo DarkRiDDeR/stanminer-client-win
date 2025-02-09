@@ -11,8 +11,25 @@ Here we write upgrading notes
 ### Added
  
 ### Changed
+
+### Delete
  
 ### Fixed
+
+## [0.4.0-beta] - 2025-02-10
+
+### Added
+
+ability to loading only used miners
+
+### Changed
+
+- miners list moved from python code to config.ini
+- console parameter *--worker* made required
+
+### Delete
+
+delete auto generation config.ini
 
 ## [0.3.1-beta] - 2025-02-08
 

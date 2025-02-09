@@ -7,6 +7,7 @@ import os
 import sys
 import zipfile
 import signal
+import shutil
 import json
 import re
 import configparser
@@ -84,65 +85,13 @@ def get_cpu_temperature():
     except Exception as e:
         logger.warning(f"Temperature detection error: {e}")
         return []
-    
-'''
-No response from server.
-Command not received. Retrying in 20 seconds...
-Starting new HTTP connection (1): 127.0.0.1:8085
-http://127.0.0.1:8085 "GET /data.json HTTP/11" 200 3637
-Send request to server ('stanvps.ddns.net', 8101):
-{'wallet': 'UQCFVXtlCUjTY5n1zdwXbALgsbYQK1WrZUfAzU3shSyMx5D8', 'worker': 'm2670WIN', 'threads': 48, 'command_hash': 'NONE', 'temps': [{'cpu': 38, 'temps': []}, {'cpu': 38, 'temps': []}], 'hashrate_value': '', 'hashrate_unit': ''}
-
-No response from server.
-Command not received. Retrying in 20 seconds...
-'''
-def gen_hash_sha1_to_base64 (id):
-    hash = hashlib.sha1(str(id).encode("UTF-8")) 
-    return base64.b64encode(hash.digest()).decode("UTF-8", "ignore") 
-
 
 def powershell(cmd, onlyStdoutResult = False):
     res = subprocess.run(["powershell", "-Command", cmd], capture_output=True, encoding = 'utf-8')
     if onlyStdoutResult:
         res = res.stdout.strip()
     return res
-
-def configIni():
-    global _g_config, _g_miners
-    try:
-        _g_config = configparser.ConfigParser()
-        # generate hash of hostname + MAC
-        #hostname = powershell("hostname", True)
-        #mac = powershell("Get-NetAdapter | Select-Object -expandproperty MacAddress", True)
-        _g_config.read('config.ini')
-        _g_miners['binaryexpr']             = _g_config['binaryexpr']
-        _g_miners['cpuminer-opt-rplant']    = _g_config['cpuminer-opt-rplant']
-        _g_miners['hellminer']              = _g_config['hellminer']
-        _g_miners['tnn-miner']              = _g_config['tnn-miner']
-        _g_miners['srbminer-multi']         = _g_config['srbminer-multi']
-        _g_miners['xmrig']                  = _g_config['xmrig']
-    except Exception as e:
-        logger.error(f"Error config.ini: {e}")
-        sys.exit(1)
-
-def start_load_miners():
-    try:
-        dir = "./"
-        for minerName, miner in _g_miners.items():
-            dirMiner = os.path.join(dir, minerName + '/' + miner['version'] + '/')
-            fileName = os.path.basename(miner['url'])
-            if not os.path.exists(dirMiner):
-                if not os.path.exists(fileName):
-                    logger.info("Download miner " + minerName + " " + miner['version'])
-                    powershell(f"Invoke-RestMethod -Uri '{miner['url']}' -OutFile '{fileName}'")
-                with zipfile.ZipFile(fileName,"r") as zip_ref:
-                    zip_ref.extractall(dirMiner)
-                os.remove(fileName)
-    except Exception as e:
-        logger.error(f"Miner loading error: {e}")
-        sys.exit(1)
-    
-
+  
 ''' FROM SERVER
 rm -rf /tmp/STAN_MINER/CURRENT_MINER;
 mkdir -p /tmp/STAN_MINER/CURRENT_MINER;
@@ -307,6 +256,40 @@ def send_parameters_and_get_command(server, wallet, worker, threads, command_has
         logger.error(f"Error communicating with server {server}: {e}")
         return None      
 
+def load_miner(name):
+    try:
+        miner = _g_miners[name]
+        dir = os.path.join("./", name)
+        dirVersion = os.path.join(dir, miner['version'])
+        fileName = os.path.basename(miner['url'])
+        if not os.path.exists(dirVersion):
+            if os.path.exists(dir): # delete old
+                shutil.rmtree(dir)
+            if not os.path.exists(fileName): #download
+                logger.info("Download miner " + name + " " + miner['version'])
+                powershell(f"Invoke-RestMethod -Uri '{miner['url']}' -OutFile '{fileName}'")
+            with zipfile.ZipFile(fileName,"r") as zip_ref:
+                zip_ref.extractall(dirVersion)
+            os.remove(fileName)
+    except Exception as e:
+        logger.error(f"Miner loading error: {e}")
+        sys.exit(1)
+
+def configIni():
+    global _g_config, _g_miners
+    try:
+        _g_config = configparser.ConfigParser()
+        _g_config.read('config.ini')
+        _g_miners['binaryexpr']             = _g_config['binaryexpr']
+        _g_miners['cpuminer-opt-rplant']    = _g_config['cpuminer-opt-rplant']
+        _g_miners['hellminer']              = _g_config['hellminer']
+        _g_miners['tnn-miner']              = _g_config['tnn-miner']
+        _g_miners['srbminer-multi']         = _g_config['srbminer-multi']
+        _g_miners['xmrig']                  = _g_config['xmrig']
+    except Exception as e:
+        logger.error(f"Error config.ini: {e}")
+        sys.exit(1)
+
 def main_loop(server, user_wallet, worker, user_threads):
     global _g_config
     command = None
@@ -327,9 +310,11 @@ def main_loop(server, user_wallet, worker, user_threads):
                         search = re.search(r'^.*/tmp/STAN_MINER/CURRENT_MINER/\S*?(SRBMiner-Multi|xmrig|tnn-miner|hellminer) (.*)$', command, flags=re.I | re.S)
 
                         if search:
-                            start_mining(search[1].lower(), search[2])
+                            miner = search[1].lower()
+                            args = search[2]
                         elif "/tmp/STAN_MINER/CURRENT_MINER/spectre" in command:
-                            start_mining("binaryexpr", re.sub(r'^.*/spectre-miner (.*?)$', r'\1', command, flags=re.S))
+                            miner = "binaryexpr"
+                            args = re.sub(r'^.*/spectre-miner (.*?)$', r'\1', command, flags=re.S)
                         elif "/tmp/STAN_MINER/CURRENT_MINER/" in command: # most likely some unknown miner
                             logger.error("Most likely some unknown miner for the client. Mining stopped")
                             logger.error("Server command:\n------\n" + command + "\n")
@@ -338,6 +323,10 @@ def main_loop(server, user_wallet, worker, user_threads):
                             logger.error("When parsing commands from the server, the miner was not found\n")
                             logger.error("Server command:\n------\n" + command + "\n")
                             break
+
+                        if (not _g_config.getboolean('MAIN', 'download_all_miners')):
+                            load_miner(miner)
+                        start_mining(miner, args)
 
                     command = send_parameters_and_get_command(server, user_wallet, worker, user_threads, prev_command_hash)
                     logger.debug(f"Waiting 120 seconds before the next poll.")
@@ -355,7 +344,7 @@ def main_loop(server, user_wallet, worker, user_threads):
             logger.info(f"Command not received. Retrying in 20 seconds...")
             time.sleep(20)
                 
-                
+
 if __name__ == "__main__":
     version = _g_version + (" " * (15 - len(_g_version)))
     logger.info(
@@ -396,6 +385,9 @@ f'''////////////////////////////////////////////////////////////////////////
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    start_load_miners()
+
+    if (_g_config.getboolean('MAIN', 'download_all_miners')):
+        for miner in _g_miners.keys():
+            load_miner(miner)
     main_loop((args.server, args.port), args.user_wallet, args.worker, args.user_threads)
     logger.info("Client stopped.")

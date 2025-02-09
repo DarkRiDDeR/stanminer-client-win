@@ -1,6 +1,6 @@
 Windows client for StanMiner (https://stanvps.ddns.net/)
 
-**Current version - 0.3.1-beta**
+**Current version - 0.4.0-beta**
 
 see CHANGELOG.md
 
@@ -20,9 +20,9 @@ or execute the command:
 |-------------------------|------------|--------------------|-----------|------------------------------------------------|
 | --user_wallet           | -u         | **Required**       | String    | Your account UID                               |
 | --user_threads          | -t         | **Required**       | Integer   | CPU threads for mining                         |
+| --worker                | -w         | **Required**       | String    | Worker name                                    |
 | --server                | -s         | -                  | String    | Server for mining                              |
 | --port                  | -p         | -                  | Integer   | Server port for mining                         |
-| --worker                | -w         | -                  | String    | Worker name                                    |
 | --debug                 |            | -                  |           | Debug mode                                     |
 
 
@@ -32,15 +32,15 @@ or execute the command:
 
 # config.ini
 
-After the first run of the script, an additional file ``config.ini`` with settings will be created. In which, in particular, you can specify the name of the worker
+additional configuration
 
 ```
 [MAIN]
 server = stanvps.ddns.net
 port = 8101
-worker = win-worker-test
 detect_temperature = false
 libre_hardware_monitor = 127.0.0.1:8085
+download_all_miners = false
 ```
 
 # Install
