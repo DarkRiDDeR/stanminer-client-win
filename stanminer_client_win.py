@@ -12,10 +12,9 @@ import json
 import re
 import configparser
 import hashlib
-import base64
 import logging
 
-_g_version = "0.4.0-beta"
+_g_version = "0.4.1-beta"
 _g_config = {} # config.ini
 _g_miners = {}
 # Global variables
@@ -370,7 +369,7 @@ f'''////////////////////////////////////////////////////////////////////////
     configIni()
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--user_wallet", type=str, help="User wallet for mining", required=True)
-    parser.add_argument("-t", "--user_threads", type=int, help="CPU threads for mining", required=True)
+    parser.add_argument("-t", "--user_threads", type=int, help="CPU threads for mining", required=False, default=0)
     parser.add_argument("-s", "--server", type=str, help="Server for mining", required=False, default=_g_config['MAIN']['server'])
     parser.add_argument("-p", "--port", type=int, help="Server port for mining", required=False, default=_g_config.getint('MAIN', 'port'))
     parser.add_argument("-w", "--worker", type=str, help="Worker name", required=True)

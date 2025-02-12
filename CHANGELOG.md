@@ -8,13 +8,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
  
 Here we write upgrading notes 
  
-### Added
+### Added for new features
  
+### Changed for changes in existing functionality
+
+### Deprecated for soon-to-be removed features
+ 
+### Removed for now removed features
+
+### Fixed for any bug fixes
+
+### Security in case of vulnerabilities
+
+## [0.4.1-beta] - 2025-02-12
+
 ### Changed
 
-### Delete
- 
-### Fixed
+change parametr ``user_threads`` set as optional
 
 ## [0.4.0-beta] - 2025-02-10
 
@@ -27,7 +37,7 @@ ability to loading only used miners
 - miners list moved from python code to config.ini
 - console parameter *--worker* made required
 
-### Delete
+### Removed
 
 delete auto generation config.ini
 
