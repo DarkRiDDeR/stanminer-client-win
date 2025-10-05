@@ -20,6 +20,17 @@ Here we write upgrading notes
 
 ### Security in case of vulnerabilities
 
+## [0.4.2-beta] - 2025-10-06
+
+### Changed
+
+- add time delay when restarting the python script via powershell
+- update miner links
+
+### Fixed
+
+detect cpuminer-opt-rplant
+
 ## [0.4.1-beta] - 2025-02-12
 
 ### Changed

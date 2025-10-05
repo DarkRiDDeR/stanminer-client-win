@@ -14,7 +14,7 @@ import configparser
 import hashlib
 import logging
 
-_g_version = "0.4.1-beta"
+_g_version = "0.4.2-beta"
 _g_config = {} # config.ini
 _g_miners = {}
 # Global variables
@@ -300,7 +300,7 @@ def main_loop(server, user_wallet, worker, user_threads):
         command = send_parameters_and_get_command(server, user_wallet, worker, user_threads, prev_command_hash)
         if command is not None:
             command_hash = hashlib.sha256(command.encode('utf-8')).hexdigest()
-            logger.info("STAN-START is active")
+            logger.info("STANMINE is active")
             while not _g_shutdown_event.is_set():
                 try:
                     if prev_command_hash != command_hash:
@@ -311,6 +311,9 @@ def main_loop(server, user_wallet, worker, user_threads):
                         if search:
                             miner = search[1].lower()
                             args = search[2]
+                        elif "/tmp/STAN_MINER/CURRENT_MINER/cpuminer-sse2" in command:
+                            miner = "cpuminer-opt-rplant"
+                            args = re.sub(r'^.*/cpuminer-sse2 (.*?)$', r'\1', command, flags=re.S)
                         elif "/tmp/STAN_MINER/CURRENT_MINER/spectre" in command:
                             miner = "binaryexpr"
                             args = re.sub(r'^.*/spectre-miner (.*?)$', r'\1', command, flags=re.S)
@@ -347,25 +350,18 @@ def main_loop(server, user_wallet, worker, user_threads):
 if __name__ == "__main__":
     version = _g_version + (" " * (15 - len(_g_version)))
     logger.info(
-f'''////////////////////////////////////////////////////////////////////////
-//                                                                    //
-//   #####                          #####                             //
-//  #     # #####   ##   #    #    #     # #####   ##   #####  #####  //
-//  #         #    #  #  ##   #    #         #    #  #  #    #   #    //
-//   #####    #   #    # # #  #     #####    #   #    # #    #   #    //
-//        #   #   ###### #  # #          #   #   ###### #####    #    //
-//  #     #   #   #    # #   ##    #     #   #   #    # #   #    #    //
-//   #####    #   #    # #    #     #####    #   #    # #    #   #    //
-//                                                                    //
-//  #     # # #    # ###### #####                                     //
-//  ##   ## # ##   # #      #    #                                    //
-//  # # # # # # #  # #####  #    #                                    //
-//  #  #  # # #  # # #      #####                                     //
-//  #     # # #   ## #      #   #                                     //
-//  #     # # #    # ###### #    #                                    //
-//                                                                    //
-//  Version {   version   }                                           //
-////////////////////////////////////////////////////////////////////////''')
+f'''//////////////////////////////////////////////////////////////
+//                                                          //
+//   #####                                                  //
+//  #     # #####   ##   #    #    #     # # #    # ######  //
+//  #         #    #  #  ##   #    ##   ## # ##   # #       //
+//   #####    #   #    # # #  #    # # # # # # #  # #       //
+//        #   #   ###### #  # #    #  #  # # #  # # ####    //
+//  #     #   #   #    # #   ##    #     # # #   ## #       //
+//   #####    #   #    # #    #    #     # # #    # ######  //
+//                                                          //
+//  Version {   version   }                                 //
+//////////////////////////////////////////////////////////////''')
     configIni()
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--user_wallet", type=str, help="User wallet for mining", required=True)

@@ -1,6 +1,6 @@
-Windows client for StanMiner (https://stanvps.ddns.net/)
+Windows client for StanMine (https://stanmine.com)
 
-**Current version - 0.4.1-beta**
+**Current version - 0.4.2-beta**
 
 see CHANGELOG.md
 
