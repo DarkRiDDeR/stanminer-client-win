@@ -1,4 +1,4 @@
-Windows client for StanMine (https://stanmine.com)
+Windows client for StanMine (https://pool.codestan.fi)
 
 **Current version - 0.4.2-beta**
 
